@@ -19,6 +19,19 @@
     <div id="overlay">
         <h2 id="overlay-title">THE FLOOR IS RNG</h2>
         <p id="overlay-desc">Click anywhere to start the Audio Engine and begin the chaos.</p>
+        
+        <div id="leaderboard-display" class="hidden">
+            <h3>TOP RUNS</h3>
+            <ul id="high-score-list"></ul>
+            <p style="font-size: 16px; margin-top: 20px;">[ Click to Play ]</p>
+        </div>
+    </div>
+
+    <div id="name-entry-screen" class="hidden">
+        <h2>NEW HIGH SCORE!</h2>
+        <p>ENTER YOUR INITIALS:</p>
+        <input type="text" id="initials-input" maxlength="3" autocomplete="off" spellcheck="false">
+        <button id="submit-score">SUBMIT</button>
     </div>
 
     <canvas id="gameCanvas" width="800" height="600"></canvas>
