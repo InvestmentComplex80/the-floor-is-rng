@@ -1,7 +1,7 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// UI
+// UI Elements
 const ruleDisplay = document.getElementById('rule-display');
 const scoreDisplay = document.getElementById('score-display');
 const levelDisplay = document.getElementById('level-display');
@@ -9,12 +9,19 @@ const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlayDesc = document.getElementById('overlay-desc');
 
+// Leaderboard UI
+const nameEntryScreen = document.getElementById('name-entry-screen');
+const initialsInput = document.getElementById('initials-input');
+const submitScoreBtn = document.getElementById('submit-score');
+const leaderboardDisplay = document.getElementById('leaderboard-display');
+const highScoreList = document.getElementById('high-score-list');
+
 // Input
 let keys = {};
 window.addEventListener('keydown', e => keys[e.code] = true);
 window.addEventListener('keyup', e => keys[e.code] = false);
 
-// Audio Engine (Web Audio API)
+// Audio Engine
 let audioCtx;
 const sfx = {
     playTone: (freq, type, duration, vol=0.1, slideFreq=null) => {
@@ -30,32 +37,81 @@ const sfx = {
         osc.start(); osc.stop(audioCtx.currentTime + duration);
     },
     ruleChange: () => sfx.playTone(150, 'sawtooth', 0.4, 0.2, 50),
-    levelUp: () => {
-        sfx.playTone(440, 'square', 0.1, 0.1);
-        setTimeout(() => sfx.playTone(554, 'square', 0.1, 0.1), 100);
-        setTimeout(() => sfx.playTone(659, 'square', 0.3, 0.1), 200);
-    },
+    levelUp: () => { sfx.playTone(440, 'square', 0.1, 0.1); setTimeout(() => sfx.playTone(554, 'square', 0.1, 0.1), 100); setTimeout(() => sfx.playTone(659, 'square', 0.3, 0.1), 200); },
     die: () => sfx.playTone(100, 'sawtooth', 0.8, 0.3, 20),
     powerup: () => sfx.playTone(800, 'sine', 0.3, 0.2, 1200),
-    smash: () => sfx.playTone(200, 'square', 0.2, 0.2, 50)
+    smash: () => sfx.playTone(200, 'square', 0.2, 0.2, 50),
+    blip: () => sfx.playTone(600, 'square', 0.05, 0.1)
 };
 
 // Global State
 let gameState = "START"; 
-let frameCount = 0;
-let score = 0; let level = 1;
-let currentRule = "NORMAL";
-let screenShake = 0;
-let invertColors = false;
+let frameCount = 0; let score = 0; let level = 1; let currentRule = "NORMAL";
+let screenShake = 0; let invertColors = false;
 
-// Physics & Modifiers
+// Physics & Entities
 let friction = 0.85; let controlMultiplier = 1; let wrapEdges = false;
 let enemiesFrozen = false; let lavaZones = [];
-
-// Entities
 let player = { x: 50, y: 50, size: 20, vx: 0, vy: 0, accel: 1.5, color: '#00ccff', invincibility: 0 };
 let goal = { x: 700, y: 500, size: 40 };
 let enemies = []; let particles = []; let powerups = [];
+
+// Leaderboard Logic
+let highScores = JSON.parse(localStorage.getItem('rngLeaderboard')) || [
+    { name: "RNG", score: 5000 },
+    { name: "CPU", score: 3000 },
+    { name: "BOT", score: 1000 },
+    { name: "NOB", score: 500 },
+    { name: "SAD", score: 100 }
+];
+
+function updateLeaderboardUI() {
+    highScoreList.innerHTML = '';
+    highScores.forEach(entry => {
+        let li = document.createElement('li');
+        li.innerHTML = `<span>${entry.name}</span> <span>${entry.score}</span>`;
+        highScoreList.appendChild(li);
+    });
+}
+
+function checkHighScore() {
+    // Are we in the top 5?
+    if (highScores.length < 5 || score > highScores[highScores.length - 1].score) {
+        gameState = "HIGHSCORE_ENTRY";
+        overlay.classList.add('hidden');
+        nameEntryScreen.classList.remove('hidden');
+        initialsInput.value = '';
+        setTimeout(() => initialsInput.focus(), 100);
+    } else {
+        showGameOver();
+    }
+}
+
+submitScoreBtn.addEventListener('click', saveScore);
+initialsInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') saveScore(); });
+initialsInput.addEventListener('input', () => { sfx.blip(); initialsInput.value = initialsInput.value.toUpperCase(); });
+
+function saveScore() {
+    let name = initialsInput.value.trim().toUpperCase() || "???";
+    highScores.push({ name: name, score: score });
+    highScores.sort((a, b) => b.score - a.score); // Sort highest to lowest
+    highScores = highScores.slice(0, 5); // Keep only top 5
+    localStorage.setItem('rngLeaderboard', JSON.stringify(highScores));
+    
+    nameEntryScreen.classList.add('hidden');
+    showGameOver();
+}
+
+function showGameOver() {
+    gameState = "DEAD";
+    overlay.classList.remove('hidden');
+    overlayTitle.innerText = "GAME OVER";
+    overlayTitle.style.color = "#ff0055";
+    overlayDesc.innerText = `Final Score: ${score}\nLevel: ${level}`;
+    
+    updateLeaderboardUI();
+    leaderboardDisplay.classList.remove('hidden');
+}
 
 // Rules Dictionary
 const rules = [
@@ -66,20 +122,22 @@ const rules = [
     { name: "PAC-MAN WORMHOLES", apply: () => { wrapEdges = true; } },
     { name: "ZA WARUDO", apply: () => { enemiesFrozen = true; invertColors = true; } },
     { name: "THE FLOOR IS LAVA", apply: () => { 
-        for(let i=0; 3 > i; i++) {
-            lavaZones.push({ x: Math.random() * 600, y: Math.random() * 400, w: 150 + Math.random()*100, h: 150 + Math.random()*100 });
-        }
+        for(let i=0; 3 > i; i++) lavaZones.push({ x: Math.random() * 600, y: Math.random() * 400, w: 150 + Math.random()*100, h: 150 + Math.random()*100 });
     }}
 ];
 
 // Initialization / Restart
 overlay.addEventListener('click', () => {
+    // Only restart if we are on the start/death screen, NOT typing our name
+    if (gameState === "HIGHSCORE_ENTRY") return; 
+
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') audioCtx.resume();
     
     if (gameState !== "PLAYING") {
         gameState = "PLAYING";
         overlay.classList.add('hidden');
+        leaderboardDisplay.classList.add('hidden');
         score = 0; level = 1; enemies = []; particles = []; powerups = []; lavaZones = [];
         player.x = canvas.width/2; player.y = canvas.height/2; player.vx = 0; player.vy = 0; player.invincibility = 0;
         scoreDisplay.innerText = `Score: 0`; levelDisplay.innerText = `Level: 1`;
@@ -88,8 +146,8 @@ overlay.addEventListener('click', () => {
     }
 });
 
+// Helper Functions
 function triggerScreenShake(intensity) { screenShake = intensity; }
-
 function spawnParticles(x, y, color, amount, speed=15) {
     for(let i=0; amount > i; i++) particles.push({ x, y, vx: (Math.random()-0.5)*speed, vy: (Math.random()-0.5)*speed, life: 1.0, color, size: Math.random()*6+2 });
 }
@@ -97,24 +155,17 @@ function spawnParticles(x, y, color, amount, speed=15) {
 function changeRule() {
     let newRule;
     do { newRule = rules[Math.floor(Math.random() * rules.length)]; } while (newRule.name === currentRule);
-    
-    currentRule = newRule.name;
-    ruleDisplay.innerText = `Rule: ${currentRule}`;
-    triggerScreenShake(20);
-    sfx.ruleChange();
-    
+    currentRule = newRule.name; ruleDisplay.innerText = `Rule: ${currentRule}`;
+    triggerScreenShake(20); sfx.ruleChange();
     ruleDisplay.style.transform = `scale(1.5) rotate(${(Math.random() - 0.5) * 30}deg)`;
     setTimeout(() => ruleDisplay.style.transform = 'scale(1) rotate(0deg)', 150);
-    
-    rules[0].apply(); 
-    newRule.apply();
+    rules[0].apply(); newRule.apply();
 }
 
 function spawnEnemy() {
     let ex, ey;
-    do {
-        ex = Math.random() * (canvas.width - 40) + 20; ey = Math.random() * (canvas.height - 40) + 20;
-    } while (Math.hypot(player.x - ex, player.y - ey) > -250 && Math.hypot(player.x - ex, player.y - ey) < 250); // safe spawn distance
+    do { ex = Math.random() * (canvas.width - 40) + 20; ey = Math.random() * (canvas.height - 40) + 20;
+    } while (Math.hypot(player.x - ex, player.y - ey) > -250 && Math.hypot(player.x - ex, player.y - ey) < 250); 
     enemies.push({ x: ex, y: ey, size: 18, vx: 0, vy: 0, accel: 0.6 + (level * 0.1), color: '#ff0055' });
 }
 
@@ -123,28 +174,24 @@ function levelUp() {
     scoreDisplay.innerText = `Score: ${score}`; levelDisplay.innerText = `Level: ${level}`;
     triggerScreenShake(15); sfx.levelUp();
     spawnParticles(goal.x + goal.size/2, goal.y + goal.size/2, '#00ff96', 50);
-    
     goal.x = Math.random() * (canvas.width - 60) + 10; goal.y = Math.random() * (canvas.height - 60) + 10;
     spawnEnemy();
-    
     if (Math.random() > 0.8) powerups.push({ x: Math.random() * 700, y: Math.random() * 500, size: 15 });
 }
 
 function die() {
-    gameState = "DEAD";
+    gameState = "CHECKING_SCORE"; // Pause updates
     triggerScreenShake(40); sfx.die();
     spawnParticles(player.x, player.y, player.color, 150, 25);
+    
+    // Wait for explosion, then check leaderboard
     setTimeout(() => {
-        overlay.classList.remove('hidden');
-        overlayTitle.innerText = "YOU DIED";
-        overlayTitle.style.color = "#ff0055";
-        overlayDesc.innerText = `Final Score: ${score}\nLevel Reached: ${level}\n\nClick to Restart`;
+        checkHighScore();
     }, 1000);
 }
 
 function checkCollision(r1, r2) {
-    let r2w = r2.w || r2.size;
-    let r2h = r2.h || r2.size;
+    let r2w = r2.w || r2.size; let r2h = r2.h || r2.size;
     return (r1.x < r2.x + r2w && r1.x + r1.size > r2.x && r1.y < r2.y + r2h && r1.y + r1.size > r2.y);
 }
 
@@ -180,8 +227,7 @@ function update() {
 
     for (let i = powerups.length - 1; i >= 0; i--) {
         if (checkCollision(player, powerups[i])) {
-            player.invincibility = 300; 
-            score += 500; scoreDisplay.innerText = `Score: ${score}`;
+            player.invincibility = 300; score += 500; scoreDisplay.innerText = `Score: ${score}`;
             sfx.powerup(); spawnParticles(powerups[i].x, powerups[i].y, '#ffd700', 30);
             powerups.splice(i, 1);
         }
@@ -211,11 +257,8 @@ function update() {
         if (checkCollision(player, enemy)) {
             if (player.invincibility > 0) {
                 sfx.smash(); spawnParticles(enemy.x, enemy.y, '#ff0055', 40);
-                score += 200; scoreDisplay.innerText = `Score: ${score}`;
-                enemies.splice(i, 1);
-            } else {
-                die();
-            }
+                score += 200; scoreDisplay.innerText = `Score: ${score}`; enemies.splice(i, 1);
+            } else { die(); }
         }
     }
 
@@ -234,7 +277,7 @@ function draw() {
     ctx.fillStyle = invertColors ? '#eee' : '#111';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    if (gameState === "PLAYING") {
+    if (gameState === "PLAYING" || gameState === "CHECKING_SCORE") {
         ctx.fillStyle = invertColors ? '#00ffff' : 'rgba(255, 50, 0, 0.4)';
         for (let lava of lavaZones) ctx.fillRect(lava.x, lava.y, lava.w, lava.h);
 
@@ -258,19 +301,11 @@ function draw() {
         ctx.shadowBlur = 0;
     }
 
-    particles.forEach(p => {
-        ctx.fillStyle = p.color; ctx.globalAlpha = p.life;
-        ctx.fillRect(p.x, p.y, p.size, p.size);
-        ctx.globalAlpha = 1.0;
-    });
-
+    particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = p.life; ctx.fillRect(p.x, p.y, p.size, p.size); ctx.globalAlpha = 1.0; });
     ctx.restore();
 }
 
-function loop() {
-    update();
-    draw();
-    requestAnimationFrame(loop);
-}
+function loop() { update(); draw(); requestAnimationFrame(loop); }
 
+updateLeaderboardUI(); // Load scores on startup
 loop();
