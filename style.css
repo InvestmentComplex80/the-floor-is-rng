@@ -1,0 +1,41 @@
+body { 
+    margin: 0; background: #050505; color: #eee; 
+    display: flex; justify-content: center; align-items: center; 
+    height: 100vh; font-family: 'Courier New', Courier, monospace; 
+    overflow: hidden; user-select: none;
+}
+#game-container { position: relative; }
+
+/* The CRT TV Effect */
+#game-container::after {
+    content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    z-index: 2; background-size: 100% 2px, 3px 100%; pointer-events: none;
+}
+
+canvas { 
+    background: #111; 
+    box-shadow: 0 0 50px rgba(0, 255, 150, 0.3); 
+    border-radius: 8px;
+    image-rendering: pixelated;
+}
+#ui { 
+    position: absolute; top: 15px; width: 100%; 
+    display: flex; flex-direction: column; align-items: center; 
+    pointer-events: none; z-index: 10;
+}
+.stats-bar {
+    display: flex; gap: 40px; font-size: 20px; font-weight: bold; 
+    color: #00ff96; margin-bottom: 10px; text-shadow: 2px 2px 0px #000;
+}
+h1 { margin: 0; font-size: 36px; color: #fff; text-shadow: 4px 4px 0px #ff0055; transition: 0.1s; }
+
+#overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.9); display: flex; flex-direction: column;
+    justify-content: center; align-items: center; color: white; z-index: 20;
+    cursor: pointer;
+}
+#overlay h2 { font-size: 60px; color: #00ff96; margin-bottom: 10px; text-shadow: 4px 4px 0px #ff0055; }
+#overlay p { font-size: 24px; color: #ccc; text-align: center; max-width: 600px; }
+.hidden { display: none !important; }
