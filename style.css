@@ -6,7 +6,6 @@ body {
 }
 #game-container { position: relative; }
 
-/* The CRT TV Effect */
 #game-container::after {
     content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
     background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
@@ -30,12 +29,33 @@ canvas {
 }
 h1 { margin: 0; font-size: 36px; color: #fff; text-shadow: 4px 4px 0px #ff0055; transition: 0.1s; }
 
-#overlay {
+#overlay, #name-entry-screen {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.9); display: flex; flex-direction: column;
     justify-content: center; align-items: center; color: white; z-index: 20;
-    cursor: pointer;
 }
-#overlay h2 { font-size: 60px; color: #00ff96; margin-bottom: 10px; text-shadow: 4px 4px 0px #ff0055; }
-#overlay p { font-size: 24px; color: #ccc; text-align: center; max-width: 600px; }
+#overlay { cursor: pointer; }
+#overlay h2 { font-size: 60px; color: #00ff96; margin-bottom: 10px; text-shadow: 4px 4px 0px #ff0055; text-align: center;}
+#overlay p { font-size: 24px; color: #ccc; text-align: center; max-width: 600px; white-space: pre-line; }
+
+/* Leaderboard Styles */
+#leaderboard-display h3 { color: #ffd700; font-size: 30px; margin-bottom: 10px; text-shadow: 2px 2px #ff0055;}
+#high-score-list { list-style: none; padding: 0; font-size: 24px; color: #fff; width: 300px;}
+#high-score-list li { display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px dashed #333; padding-bottom: 4px;}
+#high-score-list li span:first-child { color: #00ff96; }
+
+/* Name Entry Styles */
+#name-entry-screen h2 { font-size: 50px; color: #ffd700; margin-bottom: 0; text-shadow: 4px 4px #ff0055; }
+#initials-input {
+    background: transparent; border: 2px solid #00ff96; color: #00ff96;
+    font-size: 60px; width: 150px; text-align: center; font-family: 'Courier New', monospace;
+    text-transform: uppercase; outline: none; margin: 20px 0; box-shadow: 0 0 20px rgba(0,255,150,0.3);
+}
+#submit-score {
+    background: #ff0055; color: white; border: none; padding: 15px 30px;
+    font-size: 24px; font-family: 'Courier New', monospace; font-weight: bold;
+    cursor: pointer; box-shadow: 4px 4px 0px #fff; transition: 0.1s;
+}
+#submit-score:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #fff; }
+
 .hidden { display: none !important; }
