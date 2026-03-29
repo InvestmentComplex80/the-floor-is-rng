@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>The Floor is RNG</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -18,12 +19,12 @@
 
     <div id="overlay">
         <h2 id="overlay-title">THE FLOOR IS RNG</h2>
-        <p id="overlay-desc">Click anywhere to start the Audio Engine and begin the chaos.</p>
+        <p id="overlay-desc">Tap anywhere to start the Audio Engine and begin the chaos.</p>
         
         <div id="leaderboard-display" class="hidden">
             <h3>TOP RUNS</h3>
             <ul id="high-score-list"></ul>
-            <p style="font-size: 16px; margin-top: 20px; color: #aaa;">[ Click anywhere to Play ]</p>
+            <p style="font-size: 16px; margin-top: 20px; color: #aaa;">[ Tap anywhere to Play ]</p>
         </div>
     </div>
 
@@ -35,6 +36,15 @@
     </div>
 
     <div id="boss-warning" class="hidden">WARNING: BOSS ANOMALY DETECTED</div>
+
+    <div id="dpad">
+        <button id="btn-up">▲</button>
+        <div class="dpad-row">
+            <button id="btn-left">◀</button>
+            <button id="btn-down">▼</button>
+            <button id="btn-right">▶</button>
+        </div>
+    </div>
 
     <canvas id="gameCanvas" width="800" height="600"></canvas>
 </div>
